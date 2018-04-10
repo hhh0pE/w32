@@ -918,6 +918,8 @@ type KBDLLHOOKSTRUCT struct {
 
 type HOOKPROC func(int, WPARAM, LPARAM) LRESULT
 
+type WINEVENTPROC func(hWinEventHook HANDLE, event DWORD, hwnd HWND, idObject int32, idChild int32, idEventThread DWORD, dwmsEventTime DWORD) LRESULT
+
 // https://msdn.microsoft.com/en-us/library/windows/desktop/ms633498(v=vs.85).aspx
 type WNDENUMPROC func(HWND, LPARAM) LRESULT
 
@@ -930,4 +932,13 @@ type MEMORY_BASIC_INFORMATION struct {
 	State             DWORD
 	Protect           DWORD
 	Type              DWORD
+}
+
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms646272(v=vs.85).aspx
+type LastInputInfo struct {
+	CbSize uint
+	DwTime DWORD
+}
+func(lii LastInputInfo) Ticks() uint32 {
+	return uint32(lii.DwTime)
 }

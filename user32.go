@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// +build windows
 package w32
 
 import (
@@ -133,6 +134,14 @@ var (
 	procEnumChildWindows    = moduser32.NewProc("EnumChildWindows")
 	procSetWinEventHook     = moduser32.NewProc("SetWinEventHook")
 	procUnhookWinEvent      = moduser32.NewProc("UnhookWinEvent")
+
+
+	procGetParent      = moduser32.NewProc("GetParent")
+	procGetAncestor      = moduser32.NewProc("GetAncestor")
+	
+	procGetDesktopWindow = moduser32.NewProc("GetDesktopWindow")
+
+	procGetLastInputInfo = moduser32.NewProc("GetLastInputInfo")
 )
 
 // https://github.com/AllenDang/w32/pull/62/commits/bf59645b86663a54dffb94ca82683cc0610a6de3
@@ -1100,7 +1109,7 @@ func SetWindowsHookEx(idHook int, lpfn HOOKPROC, hMod HINSTANCE, dwThreadId DWOR
 }
 
 // Lifted from https://github.com/kbinani/win/blob/b749091b14a8a4867e0fc93567d5c6af7b360e8f/user32.go#L5215
-func SetWinEventHook(eventMin DWORD, eventMax DWORD, hmodWinEventProc HMODULE, pfnWinEventProc HOOKPROC, idProcess DWORD, idThread DWORD, dwFlags DWORD) HHOOK {
+func SetWinEventHook(eventMin DWORD, eventMax DWORD, hmodWinEventProc HMODULE, pfnWinEventProc WINEVENTPROC, idProcess DWORD, idThread DWORD, dwFlags DWORD) HHOOK {
 
 	ret, _, _ := procSetWinEventHook.Call(
 		uintptr(eventMin),
@@ -1167,3 +1176,37 @@ func UnregisterHotKey(hwnd HWND, id int) (err error) {
 	err = nil
 	return
 }
+
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms633510(v=vs.85).aspx
+func GetParent(hwnd HWND) HWND {
+	ret, _, _ := procGetParent.Call(uintptr(hwnd))
+	return HWND(ret)
+}
+
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms633502(v=vs.85).aspx
+func GetAncestor(hwnd HWND, flags uint) HWND {
+	ret, _, _ := procGetAncestor.Call(uintptr(hwnd), uintptr(flags))
+	return HWND(ret)
+}
+
+func GetDesktopWindow() HWND {
+	ret, _, _ := procGetDesktopWindow.Call()
+
+	return HWND(ret)
+}
+
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms646302(v=vs.85).aspx
+func GetLastInputInfo() LastInputInfo {
+	var lii LastInputInfo
+	ret, _, _ := procGetLastInputInfo.Call(uintptr(unsafe.Pointer(&lii)))
+	fmt.Println("GetLastInputInfo result", ret)
+	return lii
+}
+
+//func VirtualQuery(lpAddress uintptr, lpBuffer *MEMORY_BASIC_INFORMATION, dwLength int) int {
+//	ret, _, _ := procVirtualQuery.Call(
+//		lpAddress,
+//		uintptr(unsafe.Pointer(lpBuffer)),
+//		uintptr(dwLength))
+//	return int(ret) // TODO check for errors
+//}

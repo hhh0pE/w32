@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build windows
 package w32
 
 import (
@@ -1196,11 +1195,13 @@ func GetDesktopWindow() HWND {
 }
 
 //https://msdn.microsoft.com/en-us/library/windows/desktop/ms646302(v=vs.85).aspx
-func GetLastInputInfo() LastInputInfo {
-	var lii LastInputInfo
-	ret, _, _ := procGetLastInputInfo.Call(uintptr(unsafe.Pointer(&lii)))
-	fmt.Println("GetLastInputInfo result", ret)
-	return lii
+func GetLastInputInfo() PLASTINPUTINFO {
+	var lastInputInfo PLASTINPUTINFO
+	lastInputInfo.cbSize = uint32(unsafe.Sizeof(lastInputInfo))
+	//var lii = new(LASTINPUTINFO)
+	procGetLastInputInfo.Call(uintptr(unsafe.Pointer(&lastInputInfo)))
+	//fmt.Println("GetLastInputInfo result", lastErr)
+	return lastInputInfo
 }
 
 //func VirtualQuery(lpAddress uintptr, lpBuffer *MEMORY_BASIC_INFORMATION, dwLength int) int {

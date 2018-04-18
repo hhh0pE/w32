@@ -935,10 +935,10 @@ type MEMORY_BASIC_INFORMATION struct {
 }
 
 //https://msdn.microsoft.com/en-us/library/windows/desktop/ms646272(v=vs.85).aspx
-type LastInputInfo struct {
-	CbSize uint
-	DwTime DWORD
+type PLASTINPUTINFO struct {
+	cbSize uint32
+	dwTime uint32
 }
-func(lii LastInputInfo) Ticks() uint32 {
-	return uint32(lii.DwTime)
+func(lii PLASTINPUTINFO) Ticks() uint32 {
+	return uint32(lii.dwTime)
 }

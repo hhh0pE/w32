@@ -942,3 +942,41 @@ type PLASTINPUTINFO struct {
 func(lii PLASTINPUTINFO) Ticks() uint32 {
 	return uint32(lii.dwTime)
 }
+
+type WINDOWPLACEMENT struct {
+	length uint32
+	Flags uint32
+	ShowCmd uint32
+	PtMinPosition POINT
+	PtMaxPosition POINT
+	RcNormalPosition RECT
+}
+func(wp WINDOWPLACEMENT) PlaceType() string {
+	switch wp.ShowCmd {
+	case SW_HIDE:
+		return "SW_HIDE"
+	case SW_NORMAL:
+		return "SW_NORMAL"
+	case SW_SHOWMINIMIZED:
+		return "SW_SHOWMINIMIZED"
+	case SW_MAXIMIZE:
+		return "SW_MAXIMIZE"
+	case SW_SHOWNOACTIVATE:
+		return "SW_SHOWNOACTIVATE"
+	case SW_SHOW:
+		return "SW_SHOW"
+	case SW_MINIMIZE:
+		return "SW_MINIMIZE"
+	case SW_SHOWMINNOACTIVE:
+		return "SW_SHOWMINNOACTIVE"
+	case SW_SHOWNA:
+		return "SW_SHOWNA"
+	case SW_RESTORE:
+		return "SW_RESTORE"
+	case SW_SHOWDEFAULT:
+		return "SW_SHOWDEFAULT"
+	case SW_FORCEMINIMIZE:
+		return "SW_FORCEMINIMIZE"
+	}
+	return "<unknown>"
+}

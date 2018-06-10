@@ -60,6 +60,8 @@ var (
 	procGetPixelFormat            = modgdi32.NewProc("GetPixelFormat")
 	procSetPixelFormat            = modgdi32.NewProc("SetPixelFormat")
 	procSwapBuffers               = modgdi32.NewProc("SwapBuffers")
+
+	procGetClipBox               = modgdi32.NewProc("GetClipBox")
 )
 
 func GetDeviceCaps(hdc HDC, index int) int {
@@ -521,4 +523,9 @@ func SetPixelFormat(hdc HDC, iPixelFormat int, pfd *PIXELFORMATDESCRIPTOR) bool 
 func SwapBuffers(hdc HDC) bool {
 	ret, _, _ := procSwapBuffers.Call(uintptr(hdc))
 	return ret == TRUE
+}
+
+func GetClipBox(in HDC, rect *RECT) int {
+	ret, _, _ := procGetClipBox.Call(uintptr(in), uintptr(unsafe.Pointer(rect)))
+	return int(ret)
 }

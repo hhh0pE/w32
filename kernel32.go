@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"syscall"
 	"unsafe"
+	"errors"
 )
 
 var (
@@ -59,6 +60,8 @@ var (
 	procVirtualProtect = modkernel32.NewProc("VirtualProtect")
 	procVirtualQuery   = modkernel32.NewProc("VirtualQuery")
 	procVirtualQueryEx = modkernel32.NewProc("VirtualQueryEx")
+
+	procQueryFullProcessImageName = modkernel32.NewProc("QueryFullProcessImageNameW")
 )
 
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa366902(v=vs.85).aspx
@@ -541,4 +544,49 @@ func SetConsoleCtrlHandler(handlerRoutine func(DWORD) int32, add uint) (err erro
 	}
 	err = nil
 	return
+}
+
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms684919(v=vs.85).aspx
+func QueryFullProcessImageName(process HANDLE, flags uint32, exeName *uint16, size *uint32) error {
+	r1, _, e1 := syscall.Syscall6(
+		procQueryFullProcessImageName.Addr(),
+		4,
+		uintptr(process),
+		uintptr(flags),
+		uintptr(unsafe.Pointer(exeName)),
+		uintptr(unsafe.Pointer(size)),
+		0,
+		0)
+	if r1 == 0 {
+		if e1 != ERROR_SUCCESS {
+			return e1
+		} else {
+			return syscall.EINVAL
+		}
+	}
+	return nil
+}
+
+
+func GetProcessFullPathName(pid uint, flags DWORD) (string, error) {
+	hProcess, err := OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
+	if err != nil {
+		return "", errors.New("OpenProcess"+ err.Error())
+	}
+	defer CloseHandle(hProcess)
+
+	buf := make([]uint16, MAX_PATH)
+	size := uint32(MAX_PATH)
+	if err := QueryFullProcessImageName(hProcess, uint32(flags), &buf[0], &size); err != nil {
+		if err == syscall.Errno(ERROR_INSUFFICIENT_BUFFER) {
+			buf = make([]uint16, syscall.MAX_LONG_PATH)
+			size = syscall.MAX_LONG_PATH
+			if err := QueryFullProcessImageName(hProcess, uint32(flags), &buf[0], &size); err != nil {
+				return "", errors.New("QueryFullProcessImageName:"+ err.Error())
+			}
+		} else {
+			return "", errors.New("QueryFullProcessImageName:" +err.Error())
+		}
+	}
+	return syscall.UTF16ToString(buf[0:size]), nil
 }

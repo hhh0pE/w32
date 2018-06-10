@@ -131,6 +131,7 @@ var (
 	procFindWindowExW       = moduser32.NewProc("FindWindowExW")
 	procGetClassName        = moduser32.NewProc("GetClassNameW")
 	procEnumChildWindows    = moduser32.NewProc("EnumChildWindows")
+	procEnumWindows    = moduser32.NewProc("EnumWindows")
 	procSetWinEventHook     = moduser32.NewProc("SetWinEventHook")
 	procUnhookWinEvent      = moduser32.NewProc("UnhookWinEvent")
 
@@ -141,6 +142,7 @@ var (
 	procGetDesktopWindow = moduser32.NewProc("GetDesktopWindow")
 
 	procGetLastInputInfo = moduser32.NewProc("GetLastInputInfo")
+	procGetWindowPlacement = moduser32.NewProc("GetWindowPlacement")
 )
 
 // https://github.com/AllenDang/w32/pull/62/commits/bf59645b86663a54dffb94ca82683cc0610a6de3
@@ -163,21 +165,23 @@ func SetForegroundWindow(hwnd HWND) bool {
 }
 
 // https://github.com/AllenDang/w32/pull/62/commits/bf59645b86663a54dffb94ca82683cc0610a6de3
-func FindWindowExW(hwndParent, hwndChildAfter HWND, className, windowName *uint16) HWND {
+func FindWindowExW(hwndParent, hwndChildAfter HWND, className, windowName string) HWND {
 	ret, _, _ := procFindWindowExW.Call(
 		uintptr(hwndParent),
 		uintptr(hwndChildAfter),
-		uintptr(unsafe.Pointer(className)),
-		uintptr(unsafe.Pointer(windowName)))
+		uintptr(unsafe.Pointer(UTF16PtrFromString(className))),
+		uintptr(unsafe.Pointer(UTF16PtrFromString(windowName))),
+	)
 
 	return HWND(ret)
 }
 
 // https://github.com/AllenDang/w32/pull/62/commits/bf59645b86663a54dffb94ca82683cc0610a6de3
-func FindWindowW(className, windowName *uint16) HWND {
+func FindWindowW(className, windowName string) HWND {
 	ret, _, _ := procFindWindowW.Call(
-		uintptr(unsafe.Pointer(className)),
-		uintptr(unsafe.Pointer(windowName)))
+		uintptr(unsafe.Pointer(UTF16PtrFromString(className))),
+		uintptr(unsafe.Pointer(UTF16PtrFromString(windowName))),
+	)
 
 	return HWND(ret)
 }
@@ -193,6 +197,17 @@ func EnumChildWindows(hWndParent HWND, lpEnumFunc WNDENUMPROC, lParam LPARAM) bo
 	return ret != 0
 }
 
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms633497(v=vs.85).aspx
+func EnumWindows(lpEnumFunc WNDENUMPROC, lParam LPARAM) bool {
+	ret, _, _ := procEnumWindows.Call(
+		uintptr(syscall.NewCallback(lpEnumFunc)),
+		uintptr(lParam),
+	)
+
+	return ret != 0
+}
+
+
 func GetWindowTextW(hwnd syscall.Handle, str *uint16, maxCount int32) (len int32, err error) {
 	r0, _, e1 := syscall.Syscall(procGetWindowTextW.Addr(), 3, uintptr(hwnd), uintptr(unsafe.Pointer(str)), uintptr(maxCount))
 	len = int32(r0)
@@ -206,13 +221,13 @@ func GetWindowTextW(hwnd syscall.Handle, str *uint16, maxCount int32) (len int32
 	return
 }
 
-func GetForegroundWindow() (hwnd syscall.Handle, err error) {
+func GetForegroundWindow() (hwnd HWND, err error) {
 	r0, _, e1 := syscall.Syscall(procGetForegroundWindow.Addr(), 0, 0, 0, 0)
 	if e1 != 0 {
 		err = error(e1)
 		return
 	}
-	hwnd = syscall.Handle(r0)
+	hwnd = HWND(r0)
 	return
 }
 
@@ -376,10 +391,12 @@ func WaitMessage() bool {
 	return ret != 0
 }
 
-func SetWindowText(hwnd HWND, text string) {
-	procSetWindowText.Call(
+func SetWindowText(hwnd HWND, text string) error {
+	_, _, lastError := procSetWindowText.Call(
 		uintptr(hwnd),
 		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(text))))
+
+	return lastError
 }
 
 func GetWindowTextLength(hwnd HWND) int {
@@ -1203,7 +1220,13 @@ func GetLastInputInfo() PLASTINPUTINFO {
 	//fmt.Println("GetLastInputInfo result", lastErr)
 	return lastInputInfo
 }
-
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms633518(v=vs.85).aspx
+func GetWindowPlacement(h HWND, flags uint) WINDOWPLACEMENT {
+	var windowPlacement WINDOWPLACEMENT
+	windowPlacement.length = uint32(unsafe.Sizeof(windowPlacement))
+	procGetWindowPlacement.Call(uintptr(h), uintptr(unsafe.Pointer(&windowPlacement)))
+	return windowPlacement
+}
 //func VirtualQuery(lpAddress uintptr, lpBuffer *MEMORY_BASIC_INFORMATION, dwLength int) int {
 //	ret, _, _ := procVirtualQuery.Call(
 //		lpAddress,

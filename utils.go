@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"unicode/utf16"
 	"unsafe"
+	"golang.org/x/sys/windows"
 )
 
 func MakeIntResource(id uint16) *uint16 {
@@ -30,6 +31,11 @@ func BoolToBOOL(value bool) BOOL {
 	}
 
 	return 0
+}
+
+func UTF16PtrFromString(str string) *uint16 {
+	utfPtr, _ := windows.UTF16PtrFromString(str)
+	return utfPtr
 }
 
 func UTF16PtrToString(cstr *uint16) string {

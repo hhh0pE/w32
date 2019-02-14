@@ -62,6 +62,11 @@ var (
 	procVirtualQueryEx = modkernel32.NewProc("VirtualQueryEx")
 
 	procQueryFullProcessImageName = modkernel32.NewProc("QueryFullProcessImageNameW")
+
+	procGetBinaryType = modkernel32.NewProc("GetBinaryTypeW")
+
+	procGetWindowsDirectoryW              = modkernel32.NewProc("GetWindowsDirectoryW")
+	procGetSystemDirectoryW               = modkernel32.NewProc("GetSystemDirectoryW")
 )
 
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa366902(v=vs.85).aspx
@@ -589,4 +594,72 @@ func GetProcessFullPathName(pid uint, flags DWORD) (string, error) {
 		}
 	}
 	return syscall.UTF16ToString(buf[0:size]), nil
+}
+
+
+func GetBinaryType(lpApplicationName string, lpBinaryType *uint32) bool {
+	lpApplicationNameStr := UTF16PtrFromString(lpApplicationName)
+	ret1, _, _ := syscall.Syscall(procGetBinaryType.Addr(), 2,
+		uintptr(unsafe.Pointer(lpApplicationNameStr)),
+		uintptr(unsafe.Pointer(lpBinaryType)),
+		0)
+	return ret1 != 0
+}
+
+func GetWindowsDirectory(buffer *uint16, size uint32) (uint32, error) {
+	r1, _, e1 := syscall.Syscall(
+		procGetWindowsDirectoryW.Addr(),
+		2,
+		uintptr(unsafe.Pointer(buffer)),
+		uintptr(size),
+		0)
+	if r1 == 0 {
+		if e1 != ERROR_SUCCESS {
+			return 0, e1
+		} else {
+			return 0, syscall.EINVAL
+		}
+	}
+	return uint32(r1), nil
+}
+
+func GetWindowsPath() (string, error) {
+	len, err := GetWindowsDirectory(nil, 0)
+	if err != nil {
+		return "", errors.New("GetWindowsDirectory error: "+err.Error())
+	}
+	buf := make([]uint16, len)
+	if _, err := GetWindowsDirectory(&buf[0], len); err != nil {
+		return "", errors.New("GetWindowsDirectory error:"+err.Error())
+	}
+	return syscall.UTF16ToString(buf), nil
+}
+
+func GetSystemDirectory(buffer *uint16, size uint32) (uint32, error) {
+	r1, _, e1 := syscall.Syscall(
+		procGetSystemDirectoryW.Addr(),
+		2,
+		uintptr(unsafe.Pointer(buffer)),
+		uintptr(size),
+		0)
+	if r1 == 0 {
+		if e1 != ERROR_SUCCESS {
+			return 0, e1
+		} else {
+			return 0, syscall.EINVAL
+		}
+	}
+	return uint32(r1), nil
+}
+
+func GetWindowsSystemPath() (string, error) {
+	len, err := GetSystemDirectory(nil, 0)
+	if err != nil {
+		return "", errors.New("GetSystemDirectory error: " +err.Error())
+	}
+	buf := make([]uint16, len)
+	if _, err := GetSystemDirectory(&buf[0], len); err != nil {
+		return "", errors.New("GetSystemDirectory error:"+err.Error())
+	}
+	return syscall.UTF16ToString(buf), nil
 }

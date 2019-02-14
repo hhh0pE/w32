@@ -143,6 +143,9 @@ var (
 
 	procGetLastInputInfo = moduser32.NewProc("GetLastInputInfo")
 	procGetWindowPlacement = moduser32.NewProc("GetWindowPlacement")
+
+	procGetWindow = moduser32.NewProc("GetWindow")
+	procGetTopWindow = moduser32.NewProc("GetTopWindow")
 )
 
 // https://github.com/AllenDang/w32/pull/62/commits/bf59645b86663a54dffb94ca82683cc0610a6de3
@@ -1226,6 +1229,31 @@ func GetWindowPlacement(h HWND, flags uint) WINDOWPLACEMENT {
 	windowPlacement.length = uint32(unsafe.Sizeof(windowPlacement))
 	procGetWindowPlacement.Call(uintptr(h), uintptr(unsafe.Pointer(&windowPlacement)))
 	return windowPlacement
+}
+
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms633514(v=vs.85).aspx
+func GetTopWindow(h HWND) HWND {
+	ret, _, _ := procGetTopWindow.Call(uintptr(h))
+	return HWND(ret)
+}
+
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms633509(v=vs.85).aspx
+// nextOrPrev: 2 - next, 3 - prev
+func GetNextWindow(h HWND) HWND {
+	ret, _, _ := procGetWindow.Call(uintptr(h), uintptr(2))
+	return HWND(ret)
+}
+
+//https://msdn.microsoft.com/en-us/library/windows/desktop/ms633509(v=vs.85).aspx
+// nextOrPrev: 2 - next, 3 - prev
+func GetPrevWindow(h HWND) HWND {
+	ret, _, _ := procGetWindow.Call(uintptr(h), uintptr(3))
+	return HWND(ret)
+}
+
+func GetLastWindow(h HWND) HWND {
+	ret, _, _ := procGetWindow.Call(uintptr(h), uintptr(1))
+	return HWND(ret)
 }
 //func VirtualQuery(lpAddress uintptr, lpBuffer *MEMORY_BASIC_INFORMATION, dwLength int) int {
 //	ret, _, _ := procVirtualQuery.Call(

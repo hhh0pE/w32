@@ -67,6 +67,9 @@ var (
 
 	procGetWindowsDirectoryW              = modkernel32.NewProc("GetWindowsDirectoryW")
 	procGetSystemDirectoryW               = modkernel32.NewProc("GetSystemDirectoryW")
+
+	procAttachConsole = modkernel32.NewProc("AttachConsole")
+	procAllocConsole = modkernel32.NewProc("AllocConsole")
 )
 
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa366902(v=vs.85).aspx
@@ -662,4 +665,20 @@ func GetWindowsSystemPath() (string, error) {
 		return "", errors.New("GetSystemDirectory error:"+err.Error())
 	}
 	return syscall.UTF16ToString(buf), nil
+}
+
+func AttachConsole(dwParentProcess uint32) (ok bool) {
+	r0, _, _ := syscall.Syscall(procAttachConsole.Addr(), 1, uintptr(dwParentProcess), 0, 0)
+	ok = bool(r0 != 0)
+	return
+}
+
+
+// BOOL WINAPI AllocConsole(void);
+func AllocConsole() (e error) {
+	ret, _, lastErr := procAllocConsole.Call()
+	if ret != ERROR_SUCCESS {
+		e = lastErr
+	}
+	return
 }

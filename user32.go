@@ -481,12 +481,14 @@ func SetWindowLongPtr(hwnd HWND, index int, value uintptr) uintptr {
 	return ret
 }
 
-func GetWindowLong(hwnd HWND, index int) int32 {
+func GetWindowLong(hwnd HWND, index int) uint {
 	ret, _, _ := procGetWindowLong.Call(
 		uintptr(hwnd),
 		uintptr(index))
 
-	return int32(ret)
+	fmt.Println(ret)
+
+	return uint(ret)
 }
 
 func GetWindowLongPtr(hwnd HWND, index int) uintptr {

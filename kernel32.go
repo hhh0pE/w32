@@ -70,6 +70,8 @@ var (
 
 	procAttachConsole = modkernel32.NewProc("AttachConsole")
 	procAllocConsole = modkernel32.NewProc("AllocConsole")
+
+	procGetExitCodeProcess = modkernel32.NewProc("GetExitCodeProcess")
 )
 
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa366902(v=vs.85).aspx
@@ -681,4 +683,10 @@ func AllocConsole() (e error) {
 		e = lastErr
 	}
 	return
+}
+
+func GetExitCodeProcess(handle syscall.Handle) (uint32, error) {
+	var exitCode uint32
+	err := syscall.GetExitCodeProcess(handle, &exitCode)
+	return exitCode, err
 }

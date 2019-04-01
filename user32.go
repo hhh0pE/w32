@@ -203,7 +203,17 @@ func EnumChildWindows(hWndParent HWND, lpEnumFunc WNDENUMPROC, lParam LPARAM) bo
 //https://msdn.microsoft.com/en-us/library/windows/desktop/ms633497(v=vs.85).aspx
 func EnumWindows(lpEnumFunc WNDENUMPROC, lParam LPARAM) bool {
 	ret, _, _ := procEnumWindows.Call(
+
 		uintptr(syscall.NewCallback(lpEnumFunc)),
+		uintptr(lParam),
+	)
+
+	return ret != 0
+}
+
+func EnumWindowsCallback(callbackPtr uintptr, lParam LPARAM) bool {
+	ret, _, _ := procEnumWindows.Call(
+		callbackPtr,
 		uintptr(lParam),
 	)
 
@@ -1255,6 +1265,16 @@ func GetPrevWindow(h HWND) HWND {
 
 func GetLastWindow(h HWND) HWND {
 	ret, _, _ := procGetWindow.Call(uintptr(h), uintptr(1))
+	return HWND(ret)
+}
+
+func GetFirstWindow(h HWND) HWND {
+	ret, _, _ := procGetWindow.Call(uintptr(h), uintptr(0))
+	return HWND(ret)
+}
+
+func GetChildWindow(h HWND) HWND {
+	ret, _, _ := procGetWindow.Call(uintptr(h), uintptr(5))
 	return HWND(ret)
 }
 //func VirtualQuery(lpAddress uintptr, lpBuffer *MEMORY_BASIC_INFORMATION, dwLength int) int {

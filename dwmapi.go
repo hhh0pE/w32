@@ -105,6 +105,18 @@ func DwmGetTransportAttributes(pfIsRemoting *BOOL, pfIsConnected *BOOL, pDwGener
 	return HRESULT(ret)
 }
 
+func DwmIsWindowCloaked(hwnd HWND) bool {
+
+	var isCloaked BOOL
+	procDwmGetWindowAttribute.Call(
+		uintptr(hwnd),
+		uintptr(DWMWA_CLOAKED),
+		uintptr(unsafe.Pointer(&isCloaked)),
+		unsafe.Sizeof(isCloaked))
+	//result = HRESULT(ret)
+	return isCloaked == 2
+}
+
 // TODO: verify handling of variable arguments
 func DwmGetWindowAttribute(hWnd HWND, dwAttribute uint32) (pAttribute interface{}, result HRESULT) {
 	var pvAttribute, pvAttrSize uintptr
@@ -120,7 +132,11 @@ func DwmGetWindowAttribute(hWnd HWND, dwAttribute uint32) (pAttribute interface{
 		pvAttribute = uintptr(unsafe.Pointer(v))
 		pvAttrSize = unsafe.Sizeof(*v)
 	case DWMWA_CLOAKED:
-		panic(fmt.Sprintf("DwmGetWindowAttribute(%d) is not currently supported.", dwAttribute))
+		v := new(BOOL)
+		pAttribute = v
+		pvAttribute = uintptr(unsafe.Pointer(v))
+		pvAttrSize = unsafe.Sizeof(*v)
+		//panic(fmt.Sprintf("DwmGetWindowAttribute(%d) is not currently supported.", dwAttribute))
 	default:
 		panic(fmt.Sprintf("DwmGetWindowAttribute(%d) is not valid.", dwAttribute))
 	}

@@ -7,7 +7,6 @@ package w32
 import (
 	"syscall"
 	"unsafe"
-	"log"
 )
 
 var (
@@ -18,16 +17,16 @@ var (
 )
 
 func CallNtPowerInformation(level uint, inputBuffer uintptr, inputBufferLength int, outputBuffer uintptr, outputBufferLength int) bool {
-	r, _, lastErr := callNtPowerInformationProc.Call(uintptr(level), uintptr(inputBuffer), uintptr(inputBufferLength), uintptr(outputBuffer), uintptr(outputBufferLength))
-	if lastErr != nil {
-		log.Println("CallNtPowerInformation error: "+lastErr.Error())
-	}
+	r, _, _ := callNtPowerInformationProc.Call(uintptr(level), uintptr(inputBuffer), uintptr(inputBufferLength), uintptr(outputBuffer), uintptr(outputBufferLength))
+	//if lastErr != nil {
+	//	log.Println("CallNtPowerInformation error: "+lastErr.Error())
+	//}
 	return r != 0
 }
 
-type ThreadExecutionState int
+//type ThreadExecutionState int
 const (
-	ES_AWAYMODE_REQUIRED ThreadExecutionState = 0x00000040
+	ES_AWAYMODE_REQUIRED = 0x00000040
 	ES_CONTINUOUS = 0x80000000
 	ES_DISPLAY_REQUIRED = 0x00000002
 	ES_SYSTEM_REQUIRED = 0x00000001
